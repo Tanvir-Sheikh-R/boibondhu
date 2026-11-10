@@ -120,31 +120,16 @@ export function QuizPanel({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[12px] text-muted">
-            <BookOpen className="size-3.5" />
-            {context.subject_label} · {context.class_label}
-          </p>
-          <h2 className="truncate text-base font-bold text-ink">
-            {context.chapter_label ?? context.chapter}
-          </h2>
-        </div>
-        {grade ? (
-          <button
-            type="button"
-            onClick={() => void generate()}
-            disabled={generating}
-            className="flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13.5px] font-medium text-white transition hover:bg-neutral-800 disabled:bg-neutral-300"
-          >
-            {generating ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="size-3.5" />
-            )}
-            {t("quiz.newQuiz")}
-          </button>
-        ) : null}
+      {/* No "new quiz" action up here: the result screen already offers "Another quiz",
+          and two buttons doing the same thing only confused the flow. */}
+      <header className="min-w-0">
+        <p className="flex items-center gap-1.5 text-[12px] text-muted">
+          <BookOpen className="size-3.5" />
+          {context.subject_label} · {context.class_label}
+        </p>
+        <h2 className="truncate text-base font-bold text-ink">
+          {context.chapter_label ?? context.chapter}
+        </h2>
       </header>
 
       {error ? (
