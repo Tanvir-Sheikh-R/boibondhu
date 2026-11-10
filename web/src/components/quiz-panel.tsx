@@ -60,9 +60,11 @@ export function QuizPanel({
     }
     setGenerating(true);
     setError(null);
-    setGrade(null);
     try {
       const created = await api.generateQuiz(context, student, QUESTION_COUNT);
+      // Clear the previous attempt only once the new quiz is in hand: on failure the
+      // student keeps the quiz/result they already had, plus the error message.
+      setGrade(null);
       setQuiz(created);
       setAnswers(Array.from({ length: created.questions.length }, () => null));
     } catch (failure) {
@@ -152,12 +154,13 @@ export function QuizPanel({
         </p>
       ) : null}
 
-      {grade ? (
+      {generating ? (
+        <GeneratingView t={t} />
+      ) : grade ? (
         <ResultView
           grade={grade}
           onRetry={() => void generate()}
           onGoProgress={onGoProgress}
-          generating={generating}
           t={t}
         />
       ) : quiz ? (
@@ -249,21 +252,48 @@ export function QuizPanel({
           <button
             type="button"
             onClick={() => void generate()}
-            disabled={generating}
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-[13.5px] font-semibold text-white transition hover:bg-amber-600 disabled:bg-neutral-300"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-[13.5px] font-semibold text-white transition hover:bg-amber-600"
           >
-            {generating ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Sparkles className="size-4" />
-            )}
-            {generating ? t("quiz.generating") : t("quiz.startButton")}
+            <Sparkles className="size-4" />
+            {t("quiz.startButton")}
           </button>
-          {generating ? (
-            <p className="pt-3 text-[12px] text-muted">{t("quiz.generatingHint")}</p>
-          ) : null}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Shown while a new quiz is being written.
+ *
+ * It deliberately replaces whatever was on screen — after "Another quiz" the finished
+ * result (or the previous question list) must not stay visible, otherwise it looks like
+ * the button did nothing. Skeleton bars suggest work in progress.
+ */
+function GeneratingView({ t }: { t: TFunction }) {
+  return (
+    <div className="mt-4 rounded-2xl bg-surface p-8 text-center card-shadow sm:p-10">
+      <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-100 text-amber-700">
+        <Loader2 className="size-6 animate-spin" />
+      </span>
+      <h3 className="pt-4 text-base font-bold text-ink">{t("quiz.generating")}</h3>
+      <p className="mx-auto max-w-sm pt-1 text-[13px] leading-relaxed text-neutral-600">
+        {t("quiz.generatingHint")}
+      </p>
+
+      <div className="mx-auto mt-6 w-full max-w-md space-y-2.5" aria-hidden>
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="flex items-center gap-2.5">
+            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-amber-50 text-[11px] font-semibold text-amber-700">
+              {row + 1}
+            </span>
+            <span
+              className="h-3 flex-1 animate-pulse rounded-full bg-neutral-100"
+              style={{ animationDelay: `${row * 150}ms` }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -272,13 +302,11 @@ function ResultView({
   grade,
   onRetry,
   onGoProgress,
-  generating,
   t,
 }: {
   grade: QuizGrade;
   onRetry: () => void;
   onGoProgress: () => void;
-  generating: boolean;
   t: TFunction;
 }) {
   const percent = Math.round(grade.score * 100);
@@ -309,14 +337,9 @@ function ResultView({
             <button
               type="button"
               onClick={onRetry}
-              disabled={generating}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-neutral-100 px-4 py-2 text-[13px] font-medium text-ink transition hover:bg-neutral-200 disabled:opacity-60"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-neutral-100 px-4 py-2 text-[13px] font-medium text-ink transition hover:bg-neutral-200"
             >
-              {generating ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="size-3.5" />
-              )}
+              <RefreshCw className="size-3.5" />
               {t("quiz.another")}
             </button>
             <button
